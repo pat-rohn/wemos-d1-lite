@@ -1,17 +1,7 @@
-#ifdef MY_ESP8266
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
-#endif
 
-#ifdef MY_ESP32
 #include "WiFi.h"
 #include <HTTPClient.h>
-#endif
-
-#ifdef MY_M5STACKCORE2
-#include <HTTPClient.h>
 #include "lwip/apps/sntp.h"
-#endif
 
 #include <ArduinoJson.h>
 #include "timeseries.h"

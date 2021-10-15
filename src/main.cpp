@@ -17,7 +17,6 @@
 #ifdef MY_M5STACKCORE2
 #include <HTTPClient.h>
 #include <M5Core2.h>
-#include "lwip/apps/sntp.h"
 #include <m5stackCore2.h>
 #endif
 
@@ -100,15 +99,12 @@ void startLedControl()
   ledService.fancy();
 }
 
-#ifdef MY_M5STACKCORE2
-#include "WiFi.h"
-#include <HTTPClient.h>
-
-#include <M5Core2.h>
-
 #include <SPI.h>
 #include "timeseries.h"
 
+#ifdef MY_M5STACKCORE2
+
+#include <M5Core2.h>
 word ConvertRGB(byte R, byte G, byte B)
 {
   return (((R & 0xF8) << 8) | ((G & 0xFC) << 3) | (B >> 3));
@@ -140,7 +136,11 @@ void updateDisplay(std::map<String, CTimeseriesData> values)
   int yOffset = 50;
   M5.Lcd.fillRect(0, yOffset, 320, 320, TFT_BLACK);
   int yOffsetGap = 30;
-
+  if (values.empty())
+  {
+    M5.Lcd.drawString("No Values", 150, yOffset, 4);
+    return;
+  }
   for (auto const &ts : values)
   {
     Serial.print(ts.first);
@@ -164,8 +164,7 @@ void setup()
 
 #ifdef MY_M5STACKCORE2
   setupM5();
-#endif /* M5STACKCORE2 */
-#ifndef MY_M5STACKCORE2
+#else
   pinMode(LED_BUILTIN, OUTPUT);
 #endif
 
@@ -219,6 +218,7 @@ void measureAndSendSensorData()
     if (values.empty())
     {
       Serial.println("No Values");
+      return;
     }
     for (it = values.begin(); it != values.end(); it++)
     {
@@ -228,6 +228,9 @@ void measureAndSendSensorData()
         timeseries.addValue(name + it->second.name, it->second.value);
       }
     }
+#ifdef MY_M5STACKCORE2
+    updateDisplay(timeseries.getValues());
+#endif
     counter++;
     if (counter > buffersize)
     {
@@ -262,7 +265,4 @@ void loop()
     return;
   }
   measureAndSendSensorData();
-#ifdef MY_M5STACKCORE2
-  updateDisplay(timeseries.getValues());
-#endif /*M5STACKCORE2*/
 }

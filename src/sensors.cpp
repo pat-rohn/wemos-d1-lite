@@ -1,8 +1,5 @@
 #include "sensors.h"
 
-#ifdef MY_M5STACKCORE2
-#include "M5Stack.h"
-#endif
 #include <Adafruit_Sensor.h>
 
 #include "DHT.h"
@@ -56,6 +53,11 @@ void findAndInitSensors()
 {
     Serial.println("Find and init i2c sensors");
     byte count = 0;
+#ifdef MY_M5STACKCORE2
+    MyWire.begin(32, 33);
+#else
+    MyWire.begin();
+#endif
     MyWire.begin();
     for (byte i = 8; i < 120; i++)
     {
@@ -111,9 +113,9 @@ std::map<String, SensorData> getValues()
             }
         }
     }
-    if (std::find(m_SensorTypes.begin(), m_SensorTypes.end(), SensorType::bmp280) != m_SensorTypes.end())
+    if (std::find(m_SensorTypes.begin(), m_SensorTypes.end(), SensorType::sht30) != m_SensorTypes.end())
     {
-        for (const auto &val : getEnv())
+        for (const auto &val : getSht30())
         {
             if (val.isValid)
             {
@@ -246,11 +248,18 @@ std::array<SensorData, 3> getCjmcu()
     return sensorData;
 }
 
-std::array<SensorData, 3> getEnv()
+std::array<SensorData, 3> getQMP6988()
+{
+    std::array<SensorData, 3> sensorData;
+    //TODO
+    return sensorData;
+}
+
+std::array<SensorData, 3> getBMP280()
 {
     std::array<SensorData, 3> sensorData;
     sensorData.fill(SensorData());
-    if (!bmp.begin(0x76))
+    if (!bmp.begin(0x70))
     {
         Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
                          "try a different address!"));
@@ -267,7 +276,12 @@ std::array<SensorData, 3> getEnv()
     sensorData[1].value = pressure_event.pressure;
     sensorData[1].unit = "mbar";
     sensorData[1].name = "Pressure";
+    return sensorData;
+}
 
+std::array<SensorData, 3> getSht30()
+{
+    std::array<SensorData, 3> sensorData;
     unsigned int data[6];
 
     // Start I2C Transmission
@@ -304,10 +318,10 @@ std::array<SensorData, 3> getEnv()
     //double cTemp = ((((data[0] * 256.0) + data[1]) * 175) / 65535.0) - 45;
     //fTemp = (cTemp * 1.8) + 32;
     double humidity = ((((data[3] * 256.0) + data[4]) * 100) / 65535.0);
-    sensorData[2].isValid = true;
-    sensorData[2].value = humidity;
-    sensorData[2].unit = "%";
-    sensorData[2].name = "Humidity";
+    sensorData[0].isValid = true;
+    sensorData[0].value = humidity;
+    sensorData[0].unit = "%";
+    sensorData[0].name = "Humidity";
 
     return sensorData;
 }
@@ -374,15 +388,18 @@ void initI2CSensor(uint8_t address)
     }
     else if (address == 0x58)
     {
-        /*Serial.println("Sensor SGP30.");
+        Serial.println("Sensor SGP30 not yet implemented.");
+        /*
+        Serial.println("Sensor SGP30.");
         Serial.print("Init SGP30 CO2 / TVOC");
-        m_SensorTypes["sgp30"] = SensorType::sgp30;
+        m_SensorTypes.emplace_back(SensorType::sgp30);
         if (!sgp.begin(&MyWire))
         {
             Serial.println("Init SGP30 Failed");
         };
         Serial.print(sgp.serialnumber[0], HEX);
         Serial.print(sgp.serialnumber[1], HEX);
-        Serial.println(sgp.serialnumber[2], HEX);*/
+        Serial.println(sgp.serialnumber[2], HEX);
+        */
     }
 }

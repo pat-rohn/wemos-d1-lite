@@ -11,6 +11,8 @@ git clone https://github.com/adafruit/Adafruit_BME280_Library.git
 git clone https://github.com/adafruit/Adafruit_BMP280_Library.git
 git clone https://github.com/bblanchon/ArduinoJson.git
 git clone https://github.com/arduino-libraries/NTPClient.git
+git clone https://github.com/m5stack/M5Core2.git
+
 cd NTPClient
 mkdir src
 mv NTPClient.* src 

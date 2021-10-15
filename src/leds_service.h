@@ -1,21 +1,9 @@
-
-#ifdef MY_ESP8266
+#pragma once
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
-#endif
 
-#ifdef MY_ESP32
-#include <Arduino.h>
 #include "WiFi.h"
 #include <HTTPClient.h>
-#endif
 
-#ifdef MY_M5STACKCORE2
-#include <M5Core2.h>
-#include "WiFi.h"
-#include <HTTPClient.h>
-#endif
 
 #include "ledstrip.h"
 
