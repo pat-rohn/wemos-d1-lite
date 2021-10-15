@@ -7,7 +7,7 @@
 #include <SPI.h>
 #include <Adafruit_BME280.h>
 #include "Adafruit_CCS811.h"
-//#include "Adafruit_SGP30.h"
+#include "Adafruit_SGP30.h"
 #include <Adafruit_BMP280.h>
 
 //#include <WEMOS_SHT3X.h>
@@ -25,7 +25,7 @@ Adafruit_Sensor *bmp_pressure = bmp.getPressureSensor();
 //SHT3X sht30(0x44);
 DHTSensor *dhtSensor;
 
-//Adafruit_SGP30 sgp;
+Adafruit_SGP30 sgp;
 
 bool sensorsInit(uint8_t dhtPin)
 {
@@ -41,8 +41,7 @@ bool sensorsInit(uint8_t dhtPin)
     findAndInitSensors();
     if (m_SensorTypes.empty() && !hasDHT)
     {
-        //MyWire.begin(32, 33);
-        Serial.println("Change Wire since nothing found.");
+        Serial.println("No sensors found.");
 
         return false;
     }
@@ -55,10 +54,11 @@ void findAndInitSensors()
     byte count = 0;
 #ifdef MY_M5STACKCORE2
     MyWire.begin(32, 33);
+    Serial.println("Use pin 32 and 33 for I2C.");
 #else
-    MyWire.begin();
+    MyWire.begin(32, 33);
+    Serial.println("Use default I2C pins.");
 #endif
-    MyWire.begin();
     for (byte i = 8; i < 120; i++)
     {
         MyWire.beginTransmission(i);
@@ -116,6 +116,26 @@ std::map<String, SensorData> getValues()
     if (std::find(m_SensorTypes.begin(), m_SensorTypes.end(), SensorType::sht30) != m_SensorTypes.end())
     {
         for (const auto &val : getSht30())
+        {
+            if (val.isValid)
+            {
+                res[val.name] = val;
+            }
+        }
+    }
+    if (std::find(m_SensorTypes.begin(), m_SensorTypes.end(), SensorType::sgp30) != m_SensorTypes.end())
+    {
+        for (const auto &val : getSgp30())
+        {
+            if (val.isValid)
+            {
+                res[val.name] = val;
+            }
+        }
+    }
+    if (std::find(m_SensorTypes.begin(), m_SensorTypes.end(), SensorType::QMP6988) != m_SensorTypes.end())
+    {
+        for (const auto &val : getQMP6988())
         {
             if (val.isValid)
             {
@@ -248,13 +268,6 @@ std::array<SensorData, 3> getCjmcu()
     return sensorData;
 }
 
-std::array<SensorData, 3> getQMP6988()
-{
-    std::array<SensorData, 3> sensorData;
-    //TODO
-    return sensorData;
-}
-
 std::array<SensorData, 3> getBMP280()
 {
     std::array<SensorData, 3> sensorData;
@@ -314,14 +327,45 @@ std::array<SensorData, 3> getSht30()
         return sensorData;
     }
 
-    // Convert the data
-    //double cTemp = ((((data[0] * 256.0) + data[1]) * 175) / 65535.0) - 45;
-    //fTemp = (cTemp * 1.8) + 32;
+// Convert the data
+   double temperature = ((((data[0] * 256.0) + data[1]) * 175) / 65535.0) - 45;
     double humidity = ((((data[3] * 256.0) + data[4]) * 100) / 65535.0);
     sensorData[0].isValid = true;
     sensorData[0].value = humidity;
     sensorData[0].unit = "%";
     sensorData[0].name = "Humidity";
+
+    sensorData[1].isValid = true;
+    sensorData[1].value = temperature;
+    sensorData[1].unit = "*C";
+    sensorData[1].name = "Temperature";
+
+    return sensorData;
+}
+
+std::array<SensorData, 3> getSgp30()
+{
+    std::array<SensorData, 3> sensorData;
+
+    if (!sgp.IAQmeasure())
+    {
+        Serial.println("Measurement failed");
+        return sensorData;
+    }
+    sensorData[0].isValid = true;
+    sensorData[0].value = sgp.TVOC;
+    sensorData[0].unit = "1";
+    sensorData[0].name = "TVOC";
+    sensorData[1].isValid = true;
+    sensorData[1].value = sgp.eCO2;
+    sensorData[1].unit = "ppm";
+    sensorData[1].name = "eCO2";
+    return sensorData;
+}
+
+std::array<SensorData, 3> getQMP6988()
+{
+    std::array<SensorData, 3> sensorData;
 
     return sensorData;
 }
@@ -388,8 +432,6 @@ void initI2CSensor(uint8_t address)
     }
     else if (address == 0x58)
     {
-        Serial.println("Sensor SGP30 not yet implemented.");
-        /*
         Serial.println("Sensor SGP30.");
         Serial.print("Init SGP30 CO2 / TVOC");
         m_SensorTypes.emplace_back(SensorType::sgp30);
@@ -400,6 +442,5 @@ void initI2CSensor(uint8_t address)
         Serial.print(sgp.serialnumber[0], HEX);
         Serial.print(sgp.serialnumber[1], HEX);
         Serial.println(sgp.serialnumber[2], HEX);
-        */
     }
 }

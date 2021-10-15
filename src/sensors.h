@@ -13,6 +13,7 @@ enum class SensorType
     bmp280 = 4,
     sht30 = 5,
     sgp30 = 6,
+    QMP6988 = 7,
 };
 
 struct SensorData
@@ -71,5 +72,7 @@ std::array<SensorData, 3> getBMP280();
 std::array<SensorData, 3> getCjmcu();
 std::array<SensorData, 3> getDHT22();
 std::array<SensorData, 3> getSht30();
+std::array<SensorData, 3> getSgp30();
+std::array<SensorData, 3> getQMP6988();
 std::array<SensorData, 3> getBMP280();
 void initI2CSensor(uint8_t address);
