@@ -1,17 +1,25 @@
-#include <Arduino.h>
+
 #include <array>
 #include <map>
 
-#ifdef ESP8266
+#ifdef MY_ESP8266
+#include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#endif /* ESP8266 */
+#endif
 
-#ifdef ESP32
+#ifdef MY_ESP32
+#include <Arduino.h>
 #include "WiFi.h"
 #include <HTTPClient.h>
-#endif /* ESP32 */
+#endif
 
+#ifdef MY_M5STACKCORE2
+#include <HTTPClient.h>
+#include <M5Core2.h>
+#include "lwip/apps/sntp.h"
+#include <m5stackCore2.h>
+#endif
 
 #include "configuration.h" // TODO: Create this file, see README
 
@@ -19,7 +27,6 @@
 
 #include "sensors.h"
 #include "leds_service.h"
-
 
 CTimeseries timeseries = CTimeseries(timeseriesAddress, port);
 CLEDService ledService = CLEDService(LED_PIN);
@@ -52,11 +59,13 @@ bool tryConnect(std::string ssid, std::string password)
   int counter = 0;
   while (WiFi.status() != WL_CONNECTED && counter <= 15)
   {
+#ifdef MY_M5TACKCORE2
     digitalWrite(LED_BUILTIN, 0x0);
     delay(250);
     Serial.print(".");
     digitalWrite(LED_BUILTIN, 0x1);
-    delay(250);
+#endif
+    delay(350);
     counter++;
     if (counter >= 15)
     {
@@ -91,12 +100,74 @@ void startLedControl()
   ledService.fancy();
 }
 
+#ifdef MY_M5STACKCORE2
+#include "WiFi.h"
+#include <HTTPClient.h>
+
+#include <M5Core2.h>
+
+#include <SPI.h>
+#include "timeseries.h"
+
+word ConvertRGB(byte R, byte G, byte B)
+{
+  return (((R & 0xF8) << 8) | ((G & 0xFC) << 3) | (B >> 3));
+}
+
+void header(const char *string, uint16_t color)
+{
+  M5.Lcd.fillScreen(color);
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.setTextColor(TFT_WHITE, ConvertRGB(52, 168, 235));
+  M5.Lcd.fillRect(0, 0, 320, 30, ConvertRGB(52, 168, 235));
+  M5.Lcd.setTextDatum(TC_DATUM);
+  M5.Lcd.drawString(string, 160, 3, 4);
+  M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+  M5.Lcd.setCursor(80, 40, 4);
+}
+
+void setupM5()
+{
+
+  M5.begin(true, false, true, false);
+
+  SPI.begin(SCK, MISO, MOSI, -1);
+  header("Envy Iron Mint", TFT_BLACK);
+}
+
+void updateDisplay(std::map<String, CTimeseriesData> values)
+{
+  int yOffset = 50;
+  M5.Lcd.fillRect(0, yOffset, 320, 320, TFT_BLACK);
+  int yOffsetGap = 30;
+
+  for (auto const &ts : values)
+  {
+    Serial.print(ts.first);
+    Serial.print(": ");
+    Serial.println(ts.second.m_DataSeries[ts.second.m_DataSeries.size() - 1].Value);
+    String data = ts.first;
+    data += ": ";
+    data += ts.second.m_DataSeries[ts.second.m_DataSeries.size() - 1].Value;
+    M5.Lcd.drawString(data, 150, yOffset, 4);
+    yOffset += yOffsetGap;
+  }
+
+  M5.update();
+}
+#endif
+
 void setup()
 {
   Serial.begin(115200);
   Serial.println("setup");
 
+#ifdef MY_M5STACKCORE2
+  setupM5();
+#endif /* M5STACKCORE2 */
+#ifndef MY_M5STACKCORE2
   pinMode(LED_BUILTIN, OUTPUT);
+#endif
 
   if (connectToWiFi())
   {
@@ -168,10 +239,17 @@ void measureAndSendSensorData()
           return;
         }
       }
-      digitalWrite(LED_BUILTIN, 0x0); // to check
+
+#ifndef MY_M5STACKCORE2
+      digitalWrite(LED_BUILTIN, 0x0);
+#endif
+
       timeseries.sendData();
       counter = 0;
+
+#ifndef MY_M5STACKCORE2
       digitalWrite(LED_BUILTIN, 0x1);
+#endif
     }
   }
 }
@@ -184,4 +262,7 @@ void loop()
     return;
   }
   measureAndSendSensorData();
+#ifdef MY_M5STACKCORE2
+  updateDisplay(timeseries.getValues());
+#endif /*M5STACKCORE2*/
 }

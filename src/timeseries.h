@@ -35,6 +35,7 @@ public:
 
 public:
     void addValue(const String &name, const double &value);
+    std::map<String, CTimeseriesData> getValues();
     bool sendData();
 
 private:

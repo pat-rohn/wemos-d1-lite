@@ -1,5 +1,8 @@
 #include "sensors.h"
-//#include <M5Core2.h>
+
+#ifdef MY_M5STACKCORE2
+#include "M5Stack.h"
+#endif
 #include <Adafruit_Sensor.h>
 
 #include "DHT.h"

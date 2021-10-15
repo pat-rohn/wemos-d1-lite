@@ -1,17 +1,20 @@
-#ifdef ESP8266
+#ifdef MY_ESP8266
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#endif /* ESP8266 */
+#endif
 
-#ifdef ESP32
+#ifdef MY_ESP32
 #include "WiFi.h"
 #include <HTTPClient.h>
-#endif /* ESP32 */
+#endif
+
+#ifdef MY_M5STACKCORE2
+#include <HTTPClient.h>
+#include "lwip/apps/sntp.h"
+#endif
 
 #include <ArduinoJson.h>
 #include "timeseries.h"
-
-
 
 void CTimeseriesData::addValue(const double &value, String timestamp)
 {
@@ -37,6 +40,11 @@ void CTimeseries::addValue(const String &name, const double &value)
         m_Data.insert(std::pair<String, CTimeseriesData>(name, CTimeseriesData(name)));
     }
     m_Data.at(name).addValue(value, m_TimeHelper.getTimestamp());
+}
+
+std::map<String, CTimeseriesData> CTimeseries::getValues()
+{
+    return m_Data;
 }
 
 bool CTimeseries::sendData()
