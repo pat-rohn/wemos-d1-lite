@@ -354,12 +354,12 @@ std::array<SensorData, 3> getSgp30()
     }
     sensorData[0].isValid = true;
     sensorData[0].value = sgp.TVOC;
-    sensorData[0].unit = "1";
+    sensorData[0].unit = "ppb";
     sensorData[0].name = "TVOC";
     sensorData[1].isValid = true;
     sensorData[1].value = sgp.eCO2;
     sensorData[1].unit = "ppm";
-    sensorData[1].name = "eCO2";
+    sensorData[1].name = "CO2";
     return sensorData;
 }
 
