@@ -1,4 +1,8 @@
 #include "ledstrip.h"
+//#include <SPIFFS.h>
+#include "FS.h"
+#include <LittleFS.h>
+//#include "esp_spiffs.h"
 
 LedStrip::LedStrip(uint8_t pin, int nrOfPixels) : m_Pixels(nrOfPixels, pin, NEO_GRB + NEO_KHZ800),
                                                   m_FlameMode(),
@@ -13,6 +17,14 @@ LedStrip::LedStrip(uint8_t pin, int nrOfPixels) : m_Pixels(nrOfPixels, pin, NEO_
     m_LedColor = LEDColor::white;
     m_NrOfPixels = nrOfPixels;
     m_UseAllLEDs = true;
+    if (!LittleFS.begin())
+    {
+        Serial.println("FS - Failed to mount the filesystem");
+    }
+    else
+    {
+        Serial.println("FS - Filesystem mounted");
+    }
 }
 
 void LedStrip::beginPixels()
@@ -41,6 +53,12 @@ void LedStrip::apply()
     }
 
     updateLEDs(true);
+}
+
+void LedStrip::save()
+{
+    Serial.println("Save settings.");
+    writeConfig(LITTLEFS, "/ledstrip/config.txt", "Hello3");
 }
 
 void LedStrip::updateLEDs(bool doImmediate)
@@ -160,7 +178,7 @@ void LedStrip::pulseMode()
             if (m_Factor > m_PulseMode.UpperLimit)
             {
                 m_PulseMode.IsIncreasing = false;
-                //Serial.println("Go down");
+                // Serial.println("Go down");
             }
         }
         else
@@ -169,7 +187,7 @@ void LedStrip::pulseMode()
             if (m_Factor < m_PulseMode.LowerLimit)
             {
                 m_PulseMode.IsIncreasing = true;
-                //Serial.println("Go up");
+                // Serial.println("Go up");
             }
         }
 
@@ -231,7 +249,7 @@ void LedStrip::colorfulMode()
     delay(waitTime);
 
     m_ColorfulMode.LedActioncounter++;
-    m_NextLEDActionTime = millis() + waitTime;
+    m_NextLEDActionTime = millis() + waitTime; 
 }
 
 void LedStrip::campfireMode()
@@ -351,4 +369,25 @@ void LedStrip::showPixels()
         m_Pixels.setPixelColor(i, m_Pixels.Color(m_PixelColors.pRed[i], m_PixelColors.pGreen[i], m_PixelColors.pBlue[i]));
     }
     m_Pixels.show();
+}
+
+void LedStrip::writeConfig(fs::FS &fs, const char *path, const char *message)
+{
+    Serial.printf("Writing file: %s\r\n", path);
+
+    File file = fs.open(path, FILE_WRITE);
+    if (!file)
+    {
+        Serial.println("- failed to open file for writing");
+        return;
+    }
+    if (file.print(message))
+    {
+        Serial.println("- file written");
+    }
+    else
+    {
+        Serial.println("- write failed");
+    }
+    file.close();
 }

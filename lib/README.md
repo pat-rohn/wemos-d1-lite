@@ -20,4 +20,8 @@ mkdir NTPClient/src
 mv ./NTPClient/NTPClient.* src 
 git clone https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library.git SCD30
 
+
 ```
+## Little FS
+https://github.com/earlephilhower/mklittlefs/releases
+Terminal > Run Task > Platform IO: Upload Filesystem

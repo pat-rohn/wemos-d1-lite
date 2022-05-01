@@ -2,6 +2,8 @@
 #include <array>
 #include <Adafruit_NeoPixel.h>
 
+#include <FS.h>
+
 class LedStrip
 {
 public:
@@ -88,11 +90,12 @@ public:
     LedStrip(uint8_t pin, int nrOfPixels);
     void beginPixels();
     void apply();
+    void save();
     void changeColor(bool autoChange = true);
     void fancy();
     void showError();
     void runModeAction();
-
+    
     void setColor(double red, double green, double blue);
     std::array<uint8_t, 3> getColor();
 
@@ -102,6 +105,7 @@ private:
     void campfireMode();
     void pulseMode();
     void showPixels();
+    void writeConfig(fs::FS &fs, const char * path, const char * message);
 
 public:
     Adafruit_NeoPixel m_Pixels;

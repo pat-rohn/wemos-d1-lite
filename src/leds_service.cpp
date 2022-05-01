@@ -42,7 +42,21 @@ void CLEDService::listen()
         {
           if (currentLine.length() == 0)
           {
+            if (header.indexOf("POST /api/save") >= 0)
+            {
+              std::stringstream str;
+              str << "HTTP/1.1 200 OK" << std::endl;
+              str << "Content-type:text/json" << std::endl;
+              str << "Access-Control-Allow-Origin: * " << std::endl;
+              str << "Access-Control-Allow-Methods: GET, OPTIONS, POST, PUT" << std::endl;
+              // str << "Access-Control-Allow-Headers: Content-Type, Authorization, Accept, Accept-Language, X-Authorization" << std::endl;
+              str << "Connection: close" << std::endl;
+              str << std::endl;
+              client.println(str.str().c_str());
+              m_LedStrip->save();
 
+              break;
+            }
             if (header.indexOf("POST /api/apply") >= 0)
             {
               Serial.println("POST Apply");
@@ -133,7 +147,7 @@ void CLEDService::listen()
               str << "Content-type:text/json" << std::endl;
               str << "Access-Control-Allow-Origin: * " << std::endl;
               str << "Access-Control-Allow-Methods: GET, OPTIONS, POST, PUT" << std::endl;
-              //str << "Access-Control-Allow-Headers: Content-Type, Authorization, Accept, Accept-Language, X-Authorization" << std::endl;
+              // str << "Access-Control-Allow-Headers: Content-Type, Authorization, Accept, Accept-Language, X-Authorization" << std::endl;
               str << "Connection: close" << std::endl;
               str << std::endl;
               client.println(str.str().c_str());
